@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>SavdoGo - Kuryer Paneli</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="./node.js"></script>
+    <style>
+        body {
+            -webkit-overflow-scrolling: touch;
+            touch-action: manipulation;
+        }
+        .no-tap-highlight {
+            -webkit-tap-highlight-color: transparent;
+        }
+        button, a {
+            min-height: 44px;
+            min-width: 44px;
+            touch-action: manipulation;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <!-- Sarlavha -->
+    <header class="bg-purple-600 text-white p-4 sticky top-0 z-20 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold" data-lang="site-title">SavdoGo Kuryer</h1>
+            <div class="flex items-center space-x-4">
+                <select id="languageSelect" class="py-1 px-2 rounded bg-white text-gray-800 text-sm">
+                    <option value="uz">O‘zbek</option>
+                    <option value="ru">Русский</option>
+                    <option value="en">English</option>
+                </select>
+                <button id="profileLink" class="text-white hover:underline text-sm no-tap-highlight" data-lang="profile">Profil</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Asosiy Kontent -->
+    <main class="container mx-auto my-6 px-4">
+        <h2 class="text-xl font-semibold mb-4 text-center" data-lang="courier-orders">Buyurtmalar</h2>
+        <div id="orderList" class="space-y-4">
+            <!-- Buyurtmalar JavaScript orqali qo‘shiladi -->
+        </div>
+    </main>
+
+    <!-- Profil Modal -->
+    <div id="profileModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-10">
+        <div class="bg-white p-4 rounded-lg w-full max-w-sm">
+            <h2 class="text-lg font-semibold mb-3" data-lang="your-profile">Profilingiz</h2>
+            <input id="profileFirstName" type="text" placeholder="Ism" class="w-full p-2 mb-2 border rounded text-sm" data-lang-placeholder="first-name">
+            <input id="profileLastName" type="text" placeholder="Familiya" class="w-full p-2 mb-2 border rounded text-sm" data-lang-placeholder="last-name">
+            <input id="profilePhone" type="tel" placeholder="Telefon (+998)" class="w-full p-2 mb-2 border rounded text-sm" data-lang-placeholder="phone">
+            <button id="verifyProfilePhone" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 text-sm no-tap-highlight" data-lang="verify-phone">Telefonni tasdiqlash</button>
+            <input id="profileSmsCode" type="text" placeholder="SMS kod" class="w-full p-2 mb-2 border rounded text-sm hidden" data-lang-placeholder="sms-code">
+            <button id="confirmProfileSms" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 text-sm hidden no-tap-highlight" data-lang="confirm-sms">SMS kodni tasdiqlash</button>
+            <div class="flex justify-end space-x-2 mt-3">
+                <button id="saveProfile" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 text-sm no-tap-highlight" data-lang="save">Saqlash</button>
+                <button id="closeProfile" class="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 text-sm no-tap-highlight" data-lang="close">Yopish</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Til ma'lumotlari
+        const translations = {
+            uz: {
+                'site-title': 'SavdoGo Kuryer',
+                'profile': 'Profil',
+                'courier-orders': 'Buyurtmalar',
+                'your-profile': 'Profilingiz',
+                'first-name': 'Ism',
+                'last-name': 'Familiya',
+                'phone': 'Telefon (+998)',
+                'verify-phone': 'Telefonni tasdiqlash',
+                'sms-code': 'SMS kod',
+                'confirm-sms': 'SMS kodni tasdiqlash',
+                'save': 'Saqlash',
+                'close': 'Yopish',
+                'invalid-phone': 'To‘g‘ri telefon raqami kiriting (+998)!',
+                'invalid-sms-code': 'To‘g‘ri SMS kod kiriting!',
+                'sms-code-sent': 'SMS kodingiz',
+                'phone-verified': 'Telefon tasdiqlandi!',
+                'profile-saved': 'Profil saqlandi!',
+                'order': 'Buyurtma',
+                'total': 'Jami',
+                'date': 'Sana',
+                'address': 'Manzil',
+                'payment-method': 'To‘lov usuli',
+                'no-orders': 'Buyurtmalar yo‘q.'
+            },
+            ru: {
+                'site-title': 'SavdoGo Курьер',
+                'profile': 'Профиль',
+                'courier-orders': 'Заказы',
+                'your-profile': 'Ваш профиль',
+                'first-name': 'Имя',
+                'last-name': 'Фамилия',
+                'phone': 'Телефон (+998)',
+                'verify-phone': 'Подтвердить телефон',
+                'sms-code': 'SMS-код',
+                'confirm-sms': 'Подтвердить SMS-код',
+                'save': 'Сохранить',
+                'close': 'Закрыть',
+                'invalid-phone': 'Введите правильный номер телефона (+998)!',
+                'invalid-sms-code': 'Введите правильный SMS-код!',
+                'sms-code-sent': 'Ваш SMS-код',
+                'phone-verified': 'Телефон подтвержден!',
+                'profile-saved': 'Профиль сохранен!',
+                'order': 'Заказ',
+                'total': 'Итого',
+                'date': 'Дата',
+                'address': 'Адрес',
+                'payment-method': 'Способ оплаты',
+                'no-orders': 'Нет заказов.'
+            },
+            en: {
+                'site-title': 'SavdoGo Courier',
+                'profile': 'Profile',
+                'courier-orders': 'Orders',
+                'your-profile': 'Your Profile',
+                'first-name': 'First Name',
+                'last-name': 'Last Name',
+                'phone': 'Phone (+998)',
+                'verify-phone': 'Verify Phone',
+                'sms-code': 'SMS Code',
+                'confirm-sms': 'Confirm SMS Code',
+                'save': 'Save',
+                'close': 'Close',
+                'invalid-phone': 'Enter a valid phone number (+998)!',
+                'invalid-sms-code': 'Enter a valid SMS code!',
+                'sms-code-sent': 'Your SMS code',
+                'phone-verified': 'Phone verified!',
+                'profile-saved': 'Profile saved!',
+                'order': 'Order',
+                'total': 'Total',
+                'date': 'Date',
+                'address': 'Address',
+                'payment-method': 'Payment Method',
+                'no-orders': 'No orders yet.'
+            }
+        };
+
+        // Profil va buyurtmalar
+        let profile = JSON.parse(localStorage.getItem('courierProfile')) || { firstName: "", lastName: "", phone: "", verifiedPhone: false };
+        let orders = JSON.parse(localStorage.getItem('orders')) || [];
+        let currentLang = localStorage.getItem('language') || 'uz';
+        let generatedProfileSMSCode = '';
+
+        // DOM elementlari
+        const orderList = document.getElementById('orderList');
+        const languageSelect = document.getElementById('languageSelect');
+        const profileLink = document.getElementById('profileLink');
+        const profileModal = document.getElementById('profileModal');
+        const profileFirstNameInput = document.getElementById('profileFirstName');
+        const profileLastNameInput = document.getElementById('profileLastName');
+        const profilePhoneInput = document.getElementById('profilePhone');
+        const verifyProfilePhoneInput = document.getElementById('verifyProfilePhone');
+        const profileSmsCodeInput = document.getElementById('profileSmsCode');
+        const confirmProfileSmsButton = document.getElementById('confirmProfileSms');
+        const saveProfileButton = document.getElementById('saveProfile');
+        const closeProfile = document.getElementById('closeProfile');
+
+        // Tilni yangilash
+        function updateLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('language', lang);
+            document.querySelectorAll('[data-lang]').forEach(el => {
+                el.textContent = translations[lang][el.getAttribute('data-lang')] || el.getAttribute('data-lang');
+            });
+            document.querySelectorAll('[data-lang-placeholder]').forEach(el => {
+                el.placeholder = translations[lang][el.getAttribute('data-lang-placeholder')] || '';
+            });
+            displayOrders();
+        }
+const ws = new WebSocket('wss://your-backend-ws.com/orders');
+ws.onmessage = function(event) {
+    const orderData = JSON.parse(event.data);
+    orders.push(orderData);
+    localStorage.setItem('orders', JSON.stringify(orders));
+    displayOrders();
+    alert(`Yangi buyurtma! #${orderData.id}`);
+};
+        // Buyurtmalarni ko‘rsatish
+        function displayOrders() {
+            orderList.innerHTML = orders.length === 0 ? `<p class="text-center text-gray-500 text-sm">${translations[currentLang]['no-orders']}</p>` : '';
+            orders.forEach(order => {
+                const orderElement = document.createElement('div');
+                orderElement.className = 'bg-white rounded-lg shadow p-4 text-sm';
+                orderElement.innerHTML = `
+                    <p class="font-semibold">${translations[currentLang]['order']} #${order.id}</p>
+                    <p>${translations[currentLang]['first-name']}: ${order.firstName}</p>
+                    <p>${translations[currentLang]['last-name']}: ${order.lastName}</p>
+                    <p>${translations[currentLang]['address']}: ${order.address}</p>
+                    <p>${translations[currentLang]['phone']}: ${order.phone}</p>
+                    <p>${translations[currentLang]['payment-method']}: ${order.paymentMethod}</p>
+                    <hr class="my-2">
+                    <p class="font-semibold">${translations[currentLang]['order']}:</p>
+                    ${order.items.map(item => `
+                        <div class="flex justify-between">
+                            <span>${item.title} (x${item.quantity})</span>
+                            <span>${(item.price * item.quantity).toLocaleString()} UZS</span>
+                        </div>
+                    `).join('')}
+                    <p class="font-semibold mt-2">${translations[currentLang]['total']}: ${order.total.toLocaleString()} UZS</p>
+                    <p class="text-gray-500 mt-1">${translations[currentLang]['date']}: ${order.date}</p>
+                `;
+                orderList.appendChild(orderElement);
+            });
+        }
+
+        // SMS kod generatsiyasi
+        function generateSMSCode() {
+            return Math.floor(1000 + Math.random() * 9000).toString();
+        }
+
+        // Profilni saqlash
+        saveProfileButton.addEventListener('click', () => {
+            if (profileFirstNameInput.value && profileLastNameInput.value && profilePhoneInput.value) {
+                profile = {
+                    firstName: profileFirstNameInput.value,
+                    lastName: profileLastNameInput.value,
+                    phone: profilePhoneInput.value,
+                    verifiedPhone: profile.verifiedPhone
+                };
+                localStorage.setItem('courierProfile', JSON.stringify(profile));
+                alert(translations[currentLang]['profile-saved']);
+                profileModal.classList.add('hidden');
+            } else {
+                alert('Barcha maydonlarni to‘ldiring!');
+            }
+        });
+
+        // Telefon tasdiqlash
+        verifyProfilePhoneInput.addEventListener('click', () => {
+            if (profilePhoneInput.value.match(/^\+998\d{9}$/)) {
+                generatedProfileSMSCode = generateSMSCode();
+                profileSmsCodeInput.classList.remove('hidden');
+                confirmProfileSmsButton.classList.remove('hidden');
+                verifyProfilePhoneInput.disabled = true;
+                alert(`${translations[currentLang]['sms-code-sent']}: ${generatedProfileSMSCode}`);
+            } else {
+                alert(translations[currentLang]['invalid-phone']);
+            }
+        });
+
+        confirmProfileSmsButton.addEventListener('click', () => {
+            if (profileSmsCodeInput.value === generatedProfileSMSCode) {
+                profile.phone = profilePhoneInput.value;
+                profile.verifiedPhone = true;
+                localStorage.setItem('courierProfile', JSON.stringify(profile));
+                alert(translations[currentLang]['phone-verified']);
+                profileSmsCodeInput.classList.add('hidden');
+                confirmProfileSmsButton.classList.add('hidden');
+                verifyProfilePhoneInput.disabled = false;
+            } else {
+                alert(translations[currentLang]['invalid-sms-code']);
+            }
+        });
+
+        // Profil modalini ochish/yopish
+        profileLink.addEventListener('click', () => {
+            profileFirstNameInput.value = profile.firstName;
+            profileLastNameInput.value = profile.lastName;
+            profilePhoneInput.value = profile.phone;
+            profileModal.classList.toggle('flex');
+            profileModal.classList.toggle('hidden');
+        });
+
+        closeProfile.addEventListener('click', () => profileModal.classList.add('hidden'));
+
+        // Til o‘zgartirish
+        languageSelect.addEventListener('change', () => updateLanguage(languageSelect.value));
+
+        // Modalni tashqariga bosish orqali yopish
+        profileModal.addEventListener('click', (e) => {
+            if (e.target === profileModal) profileModal.classList.add('hidden');
+        });
+
+        // Escape tugmasi bilan yopish
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') profileModal.classList.add('hidden');
+        });
+
+        // Yangi buyurtmalarni tekshirish
+        setInterval(() => {
+            const newOrder = localStorage.getItem('newOrder');
+            if (newOrder) {
+                orders.push(JSON.parse(newOrder));
+                localStorage.setItem('orders', JSON.stringify(orders));
+                localStorage.removeItem('newOrder');
+                displayOrders();
+                alert(`Yangi buyurtma! #${orders[orders.length - 1].id}`);
+            }
+        }, 2000);
+
+        // Haqiqiy serverdan buyurtma olish
+        /*
+        const ws = new WebSocket('wss://your-backend-ws.com/orders');
+        ws.onmessage = function(event) {
+            const orderData = JSON.parse(event.data);
+            orders.push(orderData);
+            localStorage.setItem('orders', JSON.stringify(orders));
+            displayOrders();
+            alert(`Yangi buyurtma! #${orderData.id}`);
+        };
+        */
+
+        // Dastlabki sozlamalar
+        languageSelect.value = currentLang;
+        updateLanguage(currentLang);
+        displayOrders();
+    </script>
+</body>
+</html>
